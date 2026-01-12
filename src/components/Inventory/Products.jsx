@@ -1,10 +1,28 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Package, Search, X } from 'lucide-react';
+import { Package, Search, X, Printer } from 'lucide-react';
+import { printBarcode } from '../../utils/barcodePrinter';
 
 const Products = () => {
   const { inventory } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
+  const [printingId, setPrintingId] = useState(null);
+  const [printError, setPrintError] = useState(null);
+
+  const handleReprint = async (product) => {
+    setPrintingId(product.id);
+    setPrintError(null);
+    try {
+      await printBarcode(product.id, product.name);
+      setTimeout(() => {
+        setPrintingId(null);
+      }, 1000);
+    } catch (error) {
+      setPrintError({ productId: product.id, message: error.message || 'Failed to print barcode' });
+      setPrintingId(null);
+      setTimeout(() => setPrintError(null), 5000);
+    }
+  };
 
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -80,6 +98,7 @@ const Products = () => {
                   <th className="px-4 py-3 text-right text-xs font-bold text-slate-700 uppercase tracking-wider">Markup</th>
                   <th className="px-4 py-3 text-right text-xs font-bold text-slate-700 uppercase tracking-wider">Final Price</th>
                   <th className="px-4 py-3 text-right text-xs font-bold text-slate-700 uppercase tracking-wider">Total Value</th>
+                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -121,6 +140,26 @@ const Products = () => {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <span className="font-bold text-slate-900">${totalValue.toFixed(2)}</span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          onClick={() => handleReprint(product)}
+                          disabled={printingId === product.id}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                            printingId === product.id
+                              ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                              : 'bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800'
+                          }`}
+                          title="Reprint barcode label"
+                        >
+                          <Printer className={`w-3.5 h-3.5 ${printingId === product.id ? 'animate-pulse' : ''}`} />
+                          {printingId === product.id ? 'Printing...' : 'Print'}
+                        </button>
+                        {printError && printError.productId === product.id && (
+                          <div className="mt-1 text-xs text-red-600">
+                            {printError.message}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );

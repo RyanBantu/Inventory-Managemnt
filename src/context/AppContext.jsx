@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { generateProductId, generateOrderId, generateBillNumber } from '../utils/helpers';
+import { printBarcode } from '../utils/barcodePrinter';
 
 const AppContext = createContext();
 
@@ -16,6 +17,7 @@ export const AppProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
   const [sales, setSales] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [lastPrintStatus, setLastPrintStatus] = useState(null);
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -87,6 +89,30 @@ export const AppProvider = ({ children }) => {
       id: generateProductId(inventory),
     };
     setInventory([...inventory, newProduct]);
+    
+    // Automatically print barcode after product is added
+    // This is non-blocking - product is added even if printing fails
+    printBarcode(newProduct.id, newProduct.name)
+      .then(() => {
+        setLastPrintStatus({
+          success: true,
+          productId: newProduct.id,
+          message: 'Barcode printed successfully',
+        });
+        // Clear status after 5 seconds
+        setTimeout(() => setLastPrintStatus(null), 5000);
+      })
+      .catch((error) => {
+        console.error('Failed to print barcode:', error);
+        setLastPrintStatus({
+          success: false,
+          productId: newProduct.id,
+          message: error.message || 'Failed to print barcode. Product was added successfully.',
+        });
+        // Clear status after 10 seconds for errors (longer so user can read it)
+        setTimeout(() => setLastPrintStatus(null), 10000);
+      });
+    
     return newProduct;
   };
 
@@ -248,6 +274,8 @@ export const AppProvider = ({ children }) => {
     exportData,
     importData,
     clearAllData,
+    lastPrintStatus,
+    clearPrintStatus: () => setLastPrintStatus(null),
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
