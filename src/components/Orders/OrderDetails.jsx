@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
-import { Edit, Save, Receipt, Trash2, Plus, Minus } from 'lucide-react';
+import { Edit, Save, Receipt, Trash2, Plus, Minus, DollarSign } from 'lucide-react';
 import { calculateTotal } from '../../utils/helpers';
+import { theme } from '../../theme';
+
+const c = theme.colors;
 
 const OrderDetails = () => {
   const { id } = useParams();
@@ -23,196 +26,152 @@ const OrderDetails = () => {
     }
   }, [order]);
 
+  const styles = {
+    container: { display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '1024px', margin: '0 auto' },
+    header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' },
+    title: { fontSize: '36px', fontWeight: '800', color: c.primary[900], marginBottom: '8px' },
+    subtitle: { fontSize: '16px', color: c.neutral[500] },
+    btnGroup: { display: 'flex', gap: '12px' },
+    btnPrimary: { display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px', background: `linear-gradient(135deg, ${c.primary[600]} 0%, ${c.primary[700]} 100%)`, color: c.neutral.white, border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', boxShadow: `0 4px 12px ${c.primary[600]}30` },
+    btnSecondary: { display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px', backgroundColor: c.primary[500], color: c.neutral.white, border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', boxShadow: `0 4px 12px ${c.primary[500]}30` },
+    btnSuccess: { display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px', backgroundColor: c.success[500], color: c.neutral.white, border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', boxShadow: `0 4px 12px ${c.success[500]}30` },
+    card: { backgroundColor: c.neutral.white, borderRadius: '18px', padding: '32px', border: `1px solid ${c.neutral[200]}`, boxShadow: '0 1px 3px rgba(21,42,17,0.04)' },
+    grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px' },
+    label: { fontSize: '13px', fontWeight: '600', color: c.neutral[700], marginBottom: '12px', display: 'block' },
+    input: { width: '100%', padding: '12px 16px', border: `1px solid ${c.neutral[200]}`, borderRadius: '10px', fontSize: '15px', color: c.neutral[900], boxSizing: 'border-box' },
+    value: { fontSize: '18px', fontWeight: '600', color: c.primary[900] },
+    divider: { borderTop: `1px solid ${c.neutral[200]}`, paddingTop: '32px' },
+    sectionTitle: { fontSize: '20px', fontWeight: '700', color: c.primary[900], marginBottom: '16px' },
+    table: { width: '100%', borderCollapse: 'collapse', border: `1px solid ${c.neutral[200]}`, borderRadius: '12px', overflow: 'hidden', marginBottom: '24px' },
+    th: { padding: '14px 16px', backgroundColor: c.primary[50], fontSize: '14px', fontWeight: '700', color: c.primary[800], textAlign: 'left' },
+    thCenter: { padding: '14px 16px', backgroundColor: c.primary[50], fontSize: '14px', fontWeight: '700', color: c.primary[800], textAlign: 'center' },
+    thRight: { padding: '14px 16px', backgroundColor: c.primary[50], fontSize: '14px', fontWeight: '700', color: c.primary[800], textAlign: 'right' },
+    td: { padding: '14px 16px', borderTop: `1px solid ${c.neutral[100]}` },
+    tdCenter: { padding: '14px 16px', borderTop: `1px solid ${c.neutral[100]}`, textAlign: 'center' },
+    tdRight: { padding: '14px 16px', borderTop: `1px solid ${c.neutral[100]}`, textAlign: 'right' },
+    productName: { fontWeight: '600', color: c.primary[900] },
+    qtyControls: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' },
+    qtyBtn: { padding: '6px', backgroundColor: c.neutral[100], border: 'none', borderRadius: '6px', color: c.primary[700], cursor: 'pointer' },
+    qtyInput: { width: '64px', padding: '6px 8px', border: `1px solid ${c.neutral[200]}`, borderRadius: '6px', textAlign: 'center', fontSize: '14px', fontWeight: '600' },
+    removeBtn: { padding: '6px', backgroundColor: 'transparent', border: 'none', color: c.error[500], cursor: 'pointer', borderRadius: '6px' },
+    totalBox: { background: `linear-gradient(135deg, ${c.primary[50]} 0%, ${c.primary[100]} 100%)`, borderRadius: '12px', padding: '20px', border: `1px solid ${c.primary[200]}` },
+    totalRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    totalLabel: { fontSize: '18px', fontWeight: '600', color: c.neutral[700] },
+    totalValue: { fontSize: '32px', fontWeight: '800', color: c.primary[600] },
+    emptyState: { textAlign: 'center', padding: '48px', color: c.neutral[500] },
+  };
+
   if (!order) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-slate-500">Order not found</p>
-      </div>
-    );
+    return <div style={styles.emptyState}><p>Order not found</p></div>;
   }
 
   const handleUpdateQuantity = (productId, newQty) => {
-    if (newQty <= 0) {
-      handleRemoveProduct(productId);
-      return;
-    }
-    setProducts(products.map(p =>
-      p.productId === productId ? { ...p, quantity: newQty } : p
-    ));
+    if (newQty <= 0) { setProducts(products.filter(p => p.productId !== productId)); return; }
+    setProducts(products.map(p => p.productId === productId ? { ...p, quantity: newQty } : p));
   };
 
-  const handleRemoveProduct = (productId) => {
-    setProducts(products.filter(p => p.productId !== productId));
-  };
+  const handleRemoveProduct = (productId) => setProducts(products.filter(p => p.productId !== productId));
 
   const handleUpdateOrder = () => {
-    updateOrder(id, {
-      designerName,
-      clientName,
-      products,
-    });
+    updateOrder(id, { designerName, clientName, products });
     setIsEditing(false);
     alert('Order updated successfully!');
   };
 
-  const handleGenerateBill = () => {
-    navigate(`/bill/${id}`);
+  const handleGenerateBill = () => navigate(`/bill/${id}`);
+
+  const handleMarkAsPaid = () => {
+    if (window.confirm('Mark this order as paid? It will move to the employee dashboard.')) {
+      updateOrder(id, { status: 'paid' });
+      alert('Order marked as paid!');
+      navigate('/orders');
+    }
   };
 
   return (
-    <div className="flex flex-col gap-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-2">
+    <div style={styles.container}>
+      <div style={styles.header}>
         <div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Order Details</h1>
-          <p className="text-slate-600">View and edit order information</p>
+          <h1 style={styles.title}>Order Details</h1>
+          <p style={styles.subtitle}>View and edit order information</p>
         </div>
-        <div className="flex gap-3">
+        <div style={styles.btnGroup}>
           {isEditing ? (
-            <button
-              onClick={handleUpdateOrder}
-              className="flex items-center gap-2 px-5 py-3 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-all shadow-lg shadow-green-500/30 font-semibold"
-            >
-              <Save className="w-4 h-4" />
-              Save Changes
-            </button>
+            <button onClick={handleUpdateOrder} style={styles.btnSuccess}><Save size={16} /> Save Changes</button>
           ) : (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="flex items-center gap-2 px-5 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/30 font-semibold"
-            >
-              <Edit className="w-4 h-4" />
-              Edit Order
-            </button>
+            <>
+              <button onClick={() => setIsEditing(true)} style={styles.btnSecondary}><Edit size={16} /> Edit Order</button>
+              {order.status !== 'paid' && (
+                <button onClick={handleMarkAsPaid} style={styles.btnSuccess}><DollarSign size={16} /> Mark as Paid</button>
+              )}
+            </>
           )}
-          <button
-            onClick={handleGenerateBill}
-            className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg shadow-blue-500/30 font-semibold"
-          >
-            <Receipt className="w-4 h-4" />
-            Generate Bill
-          </button>
+          <button onClick={handleGenerateBill} style={styles.btnPrimary}><Receipt size={16} /> Generate Bill</button>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
-        <div className="grid grid-cols-2 gap-6 mb-8">
+      <div style={styles.card}>
+        <div style={styles.grid2}>
           <div>
-            <label className="text-sm font-semibold text-slate-700 mb-3 block">Designer Name</label>
+            <label style={styles.label}>Designer Name</label>
             {isEditing ? (
-              <input
-                type="text"
-                value={designerName}
-                onChange={(e) => setDesignerName(e.target.value)}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-900"
-              />
+              <input type="text" value={designerName} onChange={(e) => setDesignerName(e.target.value)} style={styles.input} />
             ) : (
-              <p className="text-lg text-slate-900 font-semibold">{designerName}</p>
+              <p style={styles.value}>{designerName}</p>
             )}
           </div>
           <div>
-            <label className="text-sm font-semibold text-slate-700 mb-3 block">Client Name</label>
+            <label style={styles.label}>Client Name</label>
             {isEditing ? (
-              <input
-                type="text"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-900"
-              />
+              <input type="text" value={clientName} onChange={(e) => setClientName(e.target.value)} style={styles.input} />
             ) : (
-              <p className="text-lg text-slate-900 font-semibold">{clientName}</p>
+              <p style={styles.value}>{clientName}</p>
             )}
           </div>
         </div>
 
-        <div className="border-t border-slate-200 pt-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-slate-900">Products ({products.length})</h3>
-          </div>
+        <div style={styles.divider}>
+          <h3 style={styles.sectionTitle}>Products ({products.length})</h3>
           
-          {/* Compact Table View */}
-          <div className="border border-slate-200 rounded-xl overflow-hidden mb-6">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-blue-50 to-blue-100/50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-bold text-slate-700">Product</th>
-                  <th className="px-4 py-3 text-center text-sm font-bold text-slate-700">Quantity</th>
-                  <th className="px-4 py-3 text-right text-sm font-bold text-slate-700">Unit Price</th>
-                  <th className="px-4 py-3 text-right text-sm font-bold text-slate-700">Total</th>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>Product</th>
+                <th style={styles.thCenter}>Quantity</th>
+                <th style={styles.thRight}>Unit Price</th>
+                <th style={styles.thRight}>Total</th>
+                {isEditing && <th style={{ ...styles.thCenter, width: '80px' }}>Actions</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((product, index) => (
+                <tr key={product.productId} style={{ backgroundColor: index % 2 === 0 ? c.neutral.white : c.neutral[50] }}>
+                  <td style={styles.td}><span style={styles.productName}>{product.name}</span></td>
+                  <td style={styles.tdCenter}>
+                    {isEditing ? (
+                      <div style={styles.qtyControls}>
+                        <button onClick={() => handleUpdateQuantity(product.productId, product.quantity - 1)} style={styles.qtyBtn}><Minus size={14} /></button>
+                        <input type="number" min="1" value={product.quantity} onChange={(e) => handleUpdateQuantity(product.productId, parseInt(e.target.value) || 1)} style={styles.qtyInput} />
+                        <button onClick={() => handleUpdateQuantity(product.productId, product.quantity + 1)} style={styles.qtyBtn}><Plus size={14} /></button>
+                      </div>
+                    ) : (
+                      <span style={{ fontWeight: '600', color: c.neutral[700] }}>{product.quantity}</span>
+                    )}
+                  </td>
+                  <td style={{ ...styles.tdRight, color: c.neutral[600] }}>${product.price.toFixed(2)}</td>
+                  <td style={styles.tdRight}><span style={{ fontWeight: '700', color: c.primary[900] }}>${(product.price * product.quantity).toFixed(2)}</span></td>
                   {isEditing && (
-                    <th className="px-4 py-3 text-center text-sm font-bold text-slate-700 w-20">Actions</th>
+                    <td style={styles.tdCenter}><button onClick={() => handleRemoveProduct(product.productId)} style={styles.removeBtn}><Trash2 size={16} /></button></td>
                   )}
                 </tr>
-              </thead>
-              <tbody>
-                {products.map((product, index) => (
-                  <tr
-                    key={product.productId}
-                    className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30 hover:bg-slate-100/50 transition-colors'}
-                  >
-                    <td className="px-4 py-3">
-                      <span className="font-semibold text-slate-900">{product.name}</span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {isEditing ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => handleUpdateQuantity(product.productId, product.quantity - 1)}
-                            className="p-1.5 rounded-lg hover:bg-blue-100 text-blue-600 transition-all"
-                            title="Decrease quantity"
-                          >
-                            <Minus className="w-3.5 h-3.5" />
-                          </button>
-                          <input
-                            type="number"
-                            min="1"
-                            value={product.quantity}
-                            onChange={(e) => handleUpdateQuantity(product.productId, parseInt(e.target.value) || 1)}
-                            className="w-16 px-2 py-1 border border-slate-200 rounded-lg text-center font-semibold text-sm"
-                          />
-                          <button
-                            onClick={() => handleUpdateQuantity(product.productId, product.quantity + 1)}
-                            className="p-1.5 rounded-lg hover:bg-blue-100 text-blue-600 transition-all"
-                            title="Increase quantity"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="font-semibold text-slate-700">{product.quantity}</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right text-slate-600">
-                      ${product.price.toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <span className="font-bold text-slate-900">
-                        ${(product.price * product.quantity).toFixed(2)}
-                      </span>
-                    </td>
-                    {isEditing && (
-                      <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={() => handleRemoveProduct(product.productId)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition-all"
-                          title="Remove product"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
 
-          {/* Total Summary */}
-          <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 rounded-xl p-5 border border-blue-200">
-            <div className="flex justify-between items-center">
-              <span className="text-lg font-semibold text-slate-700">Total Amount:</span>
-              <span className="text-3xl font-bold text-blue-600">
-                ${calculateTotal(products).toFixed(2)}
-              </span>
+          <div style={styles.totalBox}>
+            <div style={styles.totalRow}>
+              <span style={styles.totalLabel}>Total Amount:</span>
+              <span style={styles.totalValue}>${calculateTotal(products).toFixed(2)}</span>
             </div>
           </div>
         </div>

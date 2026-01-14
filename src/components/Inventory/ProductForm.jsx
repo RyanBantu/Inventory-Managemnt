@@ -1,171 +1,117 @@
 import { Hash, Tag, Box, DollarSign, Calculator } from 'lucide-react';
+import { theme } from '../../theme';
+
+const c = theme.colors;
 
 const ProductForm = ({ product, onChange, onSubmit }) => {
   const handleChange = (field, value) => {
     onChange({ ...product, [field]: value });
   };
 
+  const styles = {
+    form: { display: 'flex', flexDirection: 'column', gap: '24px' },
+    card: { backgroundColor: c.neutral.white, borderRadius: '18px', padding: '32px', border: `1px solid ${c.neutral[200]}`, boxShadow: '0 1px 3px rgba(21,42,17,0.04)' },
+    header: { marginBottom: '32px' },
+    title: { fontSize: '28px', fontWeight: '700', color: c.primary[900], marginBottom: '8px' },
+    subtitle: { fontSize: '15px', color: c.neutral[500] },
+    fieldsContainer: { display: 'flex', flexDirection: 'column', gap: '24px' },
+    inputGroup: {},
+    label: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '600', color: c.neutral[700], marginBottom: '10px' },
+    input: { width: '100%', padding: '14px 16px', border: `1px solid ${c.neutral[200]}`, borderRadius: '10px', fontSize: '15px', color: c.neutral[900], backgroundColor: c.neutral[50] },
+    inputReadOnly: { width: '100%', padding: '14px 16px', border: `1px solid ${c.neutral[200]}`, borderRadius: '10px', fontSize: '15px', color: c.neutral[500], backgroundColor: c.neutral[100], cursor: 'not-allowed', fontFamily: 'monospace' },
+    gridTwo: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' },
+    relativeInput: { position: 'relative' },
+    percentSymbol: { position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: c.neutral[500], fontWeight: '600' },
+    hint: { fontSize: '12px', color: c.neutral[500], marginTop: '8px' },
+    submitBtn: { marginTop: '16px', width: '100%', padding: '16px 24px', border: 'none', borderRadius: '12px', background: `linear-gradient(135deg, ${c.primary[600]} 0%, ${c.primary[700]} 100%)`, color: c.neutral.white, fontSize: '16px', fontWeight: '600', cursor: 'pointer', boxShadow: `0 4px 12px ${c.primary[600]}40` },
+  };
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSubmit();
-      }}
-      className="flex flex-col gap-6"
-    >
-      <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-slate-900 mb-2">Add New Product</h2>
-          <p className="text-slate-600">Fill in the product details below</p>
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} style={styles.form}>
+      <div style={styles.card}>
+        <div style={styles.header}>
+          <h2 style={styles.title}>Add New Product</h2>
+          <p style={styles.subtitle}>Fill in the product details below</p>
         </div>
         
-        <div className="flex flex-col gap-6">
-          <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3">
-              <Hash className="w-4 h-4 text-blue-500" />
-              Product ID
-            </label>
-            <input
-              type="text"
-              value={product.id || ''}
-              readOnly
-              className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 cursor-not-allowed font-mono"
-            />
+        <div style={styles.fieldsContainer}>
+          <div style={styles.inputGroup}>
+            <label style={styles.label}><Hash size={16} color={c.primary[600]} /> Product ID</label>
+            <input type="text" value={product.id || ''} readOnly style={styles.inputReadOnly} />
           </div>
 
-          <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3">
-              <Tag className="w-4 h-4 text-blue-500" />
-              Item Name
-            </label>
-            <input
-              type="text"
-              value={product.name || ''}
-              onChange={(e) => handleChange('name', e.target.value)}
-              required
-              className="w-full px-4 py-3.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-slate-900 placeholder:text-slate-400"
-              placeholder="Enter product name"
-            />
+          <div style={styles.inputGroup}>
+            <label style={styles.label}><Tag size={16} color={c.primary[600]} /> Item Name</label>
+            <input type="text" value={product.name || ''} onChange={(e) => handleChange('name', e.target.value)} required placeholder="Enter product name" style={styles.input} />
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3">
-                <Box className="w-4 h-4 text-blue-500" />
-                Quantity
-              </label>
+          <div style={styles.gridTwo}>
+            <div style={styles.inputGroup}>
+              <label style={styles.label}><Box size={16} color={c.primary[600]} /> Size</label>
+              <input type="text" value={product.size || ''} onChange={(e) => handleChange('size', e.target.value)} required placeholder="e.g., Small, Medium, Large" style={styles.input} />
+            </div>
+            <div style={styles.inputGroup}>
+              <label style={styles.label}><Tag size={16} color={c.primary[600]} /> Nursery</label>
+              <input type="text" value={product.nursery || ''} onChange={(e) => handleChange('nursery', e.target.value)} required placeholder="Enter nursery name" style={styles.input} />
+            </div>
+          </div>
+
+          <div style={styles.gridTwo}>
+            <div style={styles.inputGroup}>
+              <label style={styles.label}><Box size={16} color={c.primary[600]} /> Quantity</label>
               <input
                 type="number"
                 value={product.quantity === 0 ? '' : (product.quantity ?? '')}
                 onChange={(e) => {
                   const value = e.target.value;
-                  // Allow empty string for typing
-                  if (value === '') {
-                    handleChange('quantity', '');
-                  } else {
-                    const qty = parseFloat(value);
-                    if (!isNaN(qty) && qty >= 0) {
-                      handleChange('quantity', qty);
-                    }
-                  }
+                  if (value === '') { handleChange('quantity', ''); }
+                  else { const qty = parseFloat(value); if (!isNaN(qty) && qty >= 0) handleChange('quantity', qty); }
                 }}
-                onBlur={(e) => {
-                  // Ensure we have a valid number on blur
-                  const value = e.target.value;
-                  if (value === '' || value === null || value === undefined || isNaN(parseFloat(value))) {
-                    handleChange('quantity', 0);
-                  }
-                }}
-                required
-                min="0"
-                step="1"
-                className="w-full px-4 py-3.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-slate-900"
-                placeholder="0"
+                onBlur={(e) => { const value = e.target.value; if (value === '' || isNaN(parseFloat(value))) handleChange('quantity', 0); }}
+                required min="0" step="1" placeholder="0" style={styles.input}
               />
             </div>
-
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3">
-                <DollarSign className="w-4 h-4 text-blue-500" />
-                Base Price (per unit)
-              </label>
+            <div style={styles.inputGroup}>
+              <label style={styles.label}><DollarSign size={16} color={c.primary[600]} /> Base Price (per unit)</label>
               <input
                 type="number"
                 value={product.price === 0 ? '' : (product.price || '')}
                 onChange={(e) => {
                   const value = e.target.value;
-                  if (value === '') {
-                    handleChange('price', '');
-                  } else {
-                    const price = parseFloat(value);
-                    if (!isNaN(price) && price >= 0) {
-                      handleChange('price', price);
-                    }
-                  }
+                  if (value === '') { handleChange('price', ''); }
+                  else { const price = parseFloat(value); if (!isNaN(price) && price >= 0) handleChange('price', price); }
                 }}
-                onBlur={(e) => {
-                  const value = e.target.value;
-                  if (value === '' || value === null || value === undefined || isNaN(parseFloat(value))) {
-                    handleChange('price', 0);
-                  }
-                }}
-                required
-                min="0"
-                step="0.01"
-                className="w-full px-4 py-3.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-slate-900"
-                placeholder="0.00"
+                onBlur={(e) => { const value = e.target.value; if (value === '' || isNaN(parseFloat(value))) handleChange('price', 0); }}
+                required min="0" step="0.01" placeholder="0.00" style={styles.input}
               />
             </div>
           </div>
 
-          <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3">
-              <Calculator className="w-4 h-4 text-blue-500" />
-              Rate (Percentage Markup)
-            </label>
-            <div className="relative">
+          <div style={styles.inputGroup}>
+            <label style={styles.label}><Calculator size={16} color={c.primary[600]} /> Rate (Percentage Markup)</label>
+            <div style={styles.relativeInput}>
               <input
                 type="number"
                 value={product.rate === 0 ? '' : (product.rate || '')}
                 onChange={(e) => {
                   const value = e.target.value;
-                  if (value === '') {
-                    handleChange('rate', '');
-                  } else {
-                    const rate = parseFloat(value);
-                    if (!isNaN(rate) && rate >= 0) {
-                      handleChange('rate', rate);
-                    }
-                  }
+                  if (value === '') { handleChange('rate', ''); }
+                  else { const rate = parseFloat(value); if (!isNaN(rate) && rate >= 0) handleChange('rate', rate); }
                 }}
-                onBlur={(e) => {
-                  const value = e.target.value;
-                  if (value === '' || value === null || value === undefined || isNaN(parseFloat(value))) {
-                    handleChange('rate', 0);
-                  }
-                }}
-                required
-                min="0"
-                step="0.01"
-                className="w-full px-4 py-3.5 pr-10 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-slate-900"
-                placeholder="0.00"
+                onBlur={(e) => { const value = e.target.value; if (value === '' || isNaN(parseFloat(value))) handleChange('rate', 0); }}
+                required min="0" step="0.01" placeholder="0.00" style={{...styles.input, paddingRight: '40px'}}
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">%</span>
+              <span style={styles.percentSymbol}>%</span>
             </div>
-            <p className="text-xs text-slate-500 mt-2">This percentage will be added to the base price in bills</p>
+            <p style={styles.hint}>This percentage will be added to the base price in bills</p>
           </div>
         </div>
 
-        <button
-          type="submit"
-          className="mt-8 w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 font-semibold text-lg"
-        >
-          Add Product to Inventory
-        </button>
+        <button type="submit" style={styles.submitBtn}>Add Product to Inventory</button>
       </div>
     </form>
   );
 };
 
 export default ProductForm;
+            

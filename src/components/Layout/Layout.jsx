@@ -1,12 +1,31 @@
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import { theme } from '../../theme';
+
+const c = theme.colors;
 
 const Layout = () => {
+  const styles = {
+    container: {
+      minHeight: '100vh',
+      background: `linear-gradient(135deg, ${c.neutral[50]} 0%, ${c.primary[50]}30 50%, ${c.neutral[100]} 100%)`,
+    },
+    main: {
+      marginLeft: '260px',
+      minHeight: '100vh',
+    },
+    content: {
+      padding: '24px',
+      maxWidth: '1600px',
+      margin: '0 auto',
+    },
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
+    <div style={styles.container}>
       <Sidebar />
-      <main className="!ml-[288px] min-h-screen">
-        <div className="p-8 max-w-[1600px] mx-auto">
+      <main style={styles.main}>
+        <div style={styles.content}>
           <Outlet />
         </div>
       </main>

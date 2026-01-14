@@ -4,6 +4,9 @@ import { useApp } from '../../context/AppContext';
 import { Download, CheckCircle, FileText } from 'lucide-react';
 import { generateBillPDF } from '../../utils/pdfGenerator';
 import { calculateTotal, formatDate } from '../../utils/helpers';
+import { theme } from '../../theme';
+
+const c = theme.colors;
 
 const Bill = () => {
   const { id } = useParams();
@@ -13,141 +16,115 @@ const Bill = () => {
   const [pdfDownloaded, setPdfDownloaded] = useState(false);
   const [billNumber, setBillNumber] = useState('');
 
-  useEffect(() => {
-    if (order && !billNumber) {
-      setBillNumber(generateBillNumber());
-    }
-  }, [order, billNumber, generateBillNumber]);
+  useEffect(() => { if (order && !billNumber) setBillNumber(generateBillNumber()); }, [order, billNumber, generateBillNumber]);
 
-  if (!order) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-slate-500">Order not found</p>
-      </div>
-    );
-  }
-
-  const subtotal = calculateTotal(order.products);
-  const tax = subtotal * 0.1; // 10% tax
-  const total = subtotal + tax;
-
-  const handlePrintBill = () => {
-    generateBillPDF(order, billNumber);
-    setPdfDownloaded(true);
+  const styles = {
+    container: { maxWidth: '1024px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' },
+    header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' },
+    title: { fontSize: '36px', fontWeight: '800', color: c.primary[900], marginBottom: '8px' },
+    subtitle: { fontSize: '16px', color: c.neutral[500] },
+    btnGroup: { display: 'flex', gap: '12px' },
+    btnPrimary: { display: 'flex', alignItems: 'center', gap: '8px', padding: '14px 24px', backgroundColor: c.primary[500], color: c.neutral.white, border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', boxShadow: `0 4px 12px ${c.primary[500]}30` },
+    btnSuccess: (enabled) => ({ display: 'flex', alignItems: 'center', gap: '8px', padding: '14px 24px', background: enabled ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' : '#d4d4d8', backgroundColor: enabled ? '#22c55e' : '#d4d4d8', color: enabled ? '#FFFFFF' : '#71717a', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '600', cursor: enabled ? 'pointer' : 'not-allowed', boxShadow: enabled ? '0 4px 12px rgba(34, 197, 94, 0.3)' : 'none' }),
+    card: { backgroundColor: c.neutral.white, borderRadius: '18px', border: `1px solid ${c.neutral[200]}`, overflow: 'hidden', boxShadow: `0 4px 20px ${c.primary[900]}10` },
+    invoiceHeader: { background: `linear-gradient(135deg, ${c.primary[600]} 0%, ${c.primary[800]} 100%)`, color: c.neutral.white, padding: '32px' },
+    invoiceHeaderContent: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+    invoiceTitle: { fontSize: '36px', fontWeight: '800', marginBottom: '12px' },
+    billNumberRow: { display: 'flex', alignItems: 'center', gap: '8px', color: c.primary[100] },
+    dateText: { fontSize: '18px', color: c.primary[100] },
+    invoiceBody: { padding: '32px' },
+    sectionTitle: { fontSize: '13px', fontWeight: '700', color: c.neutral[700], marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px' },
+    billToBox: { backgroundColor: c.neutral[50], borderRadius: '12px', padding: '20px', border: `1px solid ${c.neutral[200]}`, marginBottom: '32px' },
+    clientName: { fontSize: '18px', fontWeight: '600', color: c.primary[900], marginBottom: '4px' },
+    designerName: { fontSize: '15px', fontWeight: '500', color: c.neutral[700] },
+    table: { width: '100%', borderCollapse: 'collapse', border: `1px solid ${c.neutral[200]}`, borderRadius: '12px', overflow: 'hidden', marginBottom: '32px' },
+    th: { padding: '16px 24px', backgroundColor: c.primary[50], fontSize: '14px', fontWeight: '700', color: c.primary[800], textAlign: 'left' },
+    thCenter: { padding: '16px 24px', backgroundColor: c.primary[50], fontSize: '14px', fontWeight: '700', color: c.primary[800], textAlign: 'center' },
+    thRight: { padding: '16px 24px', backgroundColor: c.primary[50], fontSize: '14px', fontWeight: '700', color: c.primary[800], textAlign: 'right' },
+    td: { padding: '16px 24px', borderTop: `1px solid ${c.neutral[100]}` },
+    tdCenter: { padding: '16px 24px', borderTop: `1px solid ${c.neutral[100]}`, textAlign: 'center', color: c.neutral[600] },
+    tdRight: { padding: '16px 24px', borderTop: `1px solid ${c.neutral[100]}`, textAlign: 'right' },
+    productName: { fontWeight: '600', color: c.primary[900] },
+    productTotal: { fontWeight: '700', color: c.primary[900] },
+    totalsBox: { backgroundColor: c.neutral[50], borderRadius: '12px', padding: '24px', border: `1px solid ${c.neutral[200]}` },
+    totalRow: { display: 'flex', justifyContent: 'space-between', fontWeight: '500', color: c.neutral[700], marginBottom: '12px' },
+    grandTotalRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', borderTop: `2px solid ${c.neutral[300]}` },
+    grandTotalLabel: { fontSize: '20px', fontWeight: '700', color: c.primary[900] },
+    grandTotalValue: { fontSize: '36px', fontWeight: '800', color: c.primary[600] },
+    footer: { marginTop: '32px', paddingTop: '24px', borderTop: `1px solid ${c.neutral[200]}`, textAlign: 'center' },
+    footerText: { fontSize: '15px', fontWeight: '500', color: c.neutral[500] },
+    emptyState: { textAlign: 'center', padding: '48px', color: c.neutral[500] },
   };
 
-  const handleMarkPaid = () => {
-    completeOrder(id, billNumber);
-    alert('Order marked as paid!');
-    navigate('/sales');
+  if (!order) return <div style={styles.emptyState}><p>Order not found</p></div>;
+
+  const subtotal = calculateTotal(order.products);
+  const tax = subtotal * 0.1;
+  const total = subtotal + tax;
+
+  const handlePrintBill = () => { generateBillPDF(order, billNumber); setPdfDownloaded(true); };
+  const handleMarkPaid = () => { 
+    completeOrder(id, billNumber); 
+    alert('Order marked as paid and sent to employee dashboard!'); 
+    navigate('/orders'); 
   };
 
   return (
-    <div className="max-w-5xl mx-auto flex flex-col gap-6">
-      <div className="flex items-center justify-between mb-2">
+    <div style={styles.container}>
+      <div style={styles.header}>
         <div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Invoice</h1>
-          <p className="text-slate-600">Review and finalize the bill</p>
+          <h1 style={styles.title}>Invoice</h1>
+          <p style={styles.subtitle}>Review and finalize the bill</p>
         </div>
-        <div className="flex gap-3">
-          <button
-            onClick={handlePrintBill}
-            className="flex items-center gap-2 px-6 py-3.5 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/30 font-semibold"
-          >
-            <Download className="w-5 h-5" />
-            Print Bill
-          </button>
-          <button
-            onClick={handleMarkPaid}
-            disabled={!pdfDownloaded}
-            className={`flex items-center gap-2 px-6 py-3.5 rounded-xl transition-all shadow-lg font-semibold ${
-              pdfDownloaded
-                ? 'bg-green-500 text-white hover:bg-green-600 shadow-green-500/30'
-                : 'bg-slate-300 text-slate-500 cursor-not-allowed'
-            }`}
-          >
-            <CheckCircle className="w-5 h-5" />
-            Mark as Paid
-          </button>
+        <div style={styles.btnGroup}>
+          <button onClick={handlePrintBill} style={styles.btnPrimary}><Download size={20} /> Print Bill</button>
+          <button onClick={handleMarkPaid} disabled={!pdfDownloaded} style={styles.btnSuccess(pdfDownloaded)}><CheckCircle size={20} /> Mark as Paid</button>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-8">
-          <div className="flex items-center justify-between">
+      <div style={styles.card}>
+        <div style={styles.invoiceHeader}>
+          <div style={styles.invoiceHeaderContent}>
             <div>
-              <h2 className="text-4xl font-bold mb-3">INVOICE</h2>
-              <div className="flex items-center gap-2 text-blue-100">
-                <FileText className="w-5 h-5" />
-                <span className="font-semibold">Bill No: {billNumber}</span>
-              </div>
+              <h2 style={styles.invoiceTitle}>INVOICE</h2>
+              <div style={styles.billNumberRow}><FileText size={20} /><span style={{ fontWeight: '600' }}>Bill No: {billNumber}</span></div>
             </div>
-            <div className="text-right text-blue-100">
-              <p className="text-lg">Date: {formatDate(new Date().toISOString())}</p>
-            </div>
+            <div style={{ textAlign: 'right' }}><p style={styles.dateText}>Date: {formatDate(new Date().toISOString())}</p></div>
           </div>
         </div>
 
-        <div className="p-8">
-          {/* Bill To */}
-          <div className="mb-8">
-            <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Bill To:</h3>
-            <div className="bg-slate-50 rounded-xl p-5 border border-slate-200">
-              <p className="text-slate-900 font-semibold text-lg mb-1">Client: {order.clientName}</p>
-              <p className="text-slate-700 font-medium">Designer: {order.designerName}</p>
+        <div style={styles.invoiceBody}>
+          <div style={{ marginBottom: '32px' }}>
+            <h3 style={styles.sectionTitle}>Bill To:</h3>
+            <div style={styles.billToBox}>
+              <p style={styles.clientName}>Client: {order.clientName}</p>
+              <p style={styles.designerName}>Designer: {order.designerName}</p>
             </div>
           </div>
 
-          {/* Products Table */}
-          <div className="border border-slate-200 rounded-xl overflow-hidden mb-8">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-blue-50 to-blue-100/50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-slate-700">Product</th>
-                  <th className="px-6 py-4 text-center text-sm font-bold text-slate-700">Quantity</th>
-                  <th className="px-6 py-4 text-right text-sm font-bold text-slate-700">Unit Price</th>
-                  <th className="px-6 py-4 text-right text-sm font-bold text-slate-700">Total</th>
+          <table style={styles.table}>
+            <thead>
+              <tr><th style={styles.th}>Product</th><th style={styles.thCenter}>Quantity</th><th style={styles.thRight}>Unit Price</th><th style={styles.thRight}>Total</th></tr>
+            </thead>
+            <tbody>
+              {order.products.map((product, index) => (
+                <tr key={product.productId} style={{ backgroundColor: index % 2 === 0 ? c.neutral.white : c.neutral[50] }}>
+                  <td style={styles.td}><span style={styles.productName}>{product.name}</span></td>
+                  <td style={styles.tdCenter}>{product.quantity}</td>
+                  <td style={{ ...styles.tdRight, color: c.neutral[600] }}>${product.price.toFixed(2)}</td>
+                  <td style={styles.tdRight}><span style={styles.productTotal}>${(product.price * product.quantity).toFixed(2)}</span></td>
                 </tr>
-              </thead>
-              <tbody>
-                {order.products.map((product, index) => (
-                  <tr
-                    key={product.productId}
-                    className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}
-                  >
-                    <td className="px-6 py-4 text-slate-900 font-semibold">{product.name}</td>
-                    <td className="px-6 py-4 text-center text-slate-600">{product.quantity}</td>
-                    <td className="px-6 py-4 text-right text-slate-600">${product.price.toFixed(2)}</td>
-                    <td className="px-6 py-4 text-right font-bold text-slate-900">
-                      ${(product.price * product.quantity).toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              ))}
+            </tbody>
+          </table>
+
+          <div style={styles.totalsBox}>
+            <div style={styles.totalRow}><span>Subtotal:</span><span>${subtotal.toFixed(2)}</span></div>
+            <div style={styles.totalRow}><span>Tax (10%):</span><span>${tax.toFixed(2)}</span></div>
+            <div style={styles.grandTotalRow}><span style={styles.grandTotalLabel}>Total:</span><span style={styles.grandTotalValue}>${total.toFixed(2)}</span></div>
           </div>
 
-          {/* Totals */}
-          <div className="flex flex-col gap-3 bg-slate-50 rounded-xl p-6 border border-slate-200">
-            <div className="flex justify-between text-slate-700 font-medium">
-              <span>Subtotal:</span>
-              <span>${subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-slate-700 font-medium">
-              <span>Tax (10%):</span>
-              <span>${tax.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between items-center pt-4 border-t-2 border-slate-300">
-              <span className="text-xl font-bold text-slate-900">Total:</span>
-              <span className="text-4xl font-bold text-blue-600">${total.toFixed(2)}</span>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="mt-8 pt-6 border-t border-slate-200 text-center">
-            <p className="text-slate-500 font-medium">Thank you for your business!</p>
-          </div>
+          <div style={styles.footer}><p style={styles.footerText}>Thank you for your business!</p></div>
         </div>
       </div>
     </div>

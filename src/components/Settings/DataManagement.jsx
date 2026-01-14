@@ -1,6 +1,9 @@
 import { useState, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Download, Upload, Trash2, Database, CheckCircle, AlertCircle } from 'lucide-react';
+import { theme } from '../../theme';
+
+const c = theme.colors;
 
 const DataManagement = () => {
   const { exportData, importData, clearAllData, inventory, orders, sales } = useApp();
@@ -8,188 +11,107 @@ const DataManagement = () => {
   const fileInputRef = useRef(null);
 
   const handleExport = () => {
-    try {
-      exportData();
-      setImportStatus({ type: 'success', message: 'Data exported successfully!' });
-      setTimeout(() => setImportStatus({ type: null, message: '' }), 3000);
-    } catch (error) {
-      setImportStatus({ type: 'error', message: 'Failed to export data' });
-      setTimeout(() => setImportStatus({ type: null, message: '' }), 3000);
-    }
+    try { exportData(); setImportStatus({ type: 'success', message: 'Data exported successfully!' }); setTimeout(() => setImportStatus({ type: null, message: '' }), 3000); }
+    catch (error) { setImportStatus({ type: 'error', message: 'Failed to export data' }); setTimeout(() => setImportStatus({ type: null, message: '' }), 3000); }
   };
 
   const handleImport = (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const jsonData = e.target.result;
-        const success = importData(jsonData);
-        if (success) {
-          setImportStatus({ type: 'success', message: 'Data imported successfully!' });
-          setTimeout(() => setImportStatus({ type: null, message: '' }), 3000);
-        } else {
-          setImportStatus({ type: 'error', message: 'Failed to import data. Please check the file format.' });
-          setTimeout(() => setImportStatus({ type: null, message: '' }), 3000);
-        }
-      } catch (error) {
-        setImportStatus({ type: 'error', message: 'Error reading file: ' + error.message });
+        const success = importData(e.target.result);
+        if (success) { setImportStatus({ type: 'success', message: 'Data imported successfully!' }); }
+        else { setImportStatus({ type: 'error', message: 'Failed to import data. Please check the file format.' }); }
         setTimeout(() => setImportStatus({ type: null, message: '' }), 3000);
-      }
+      } catch (error) { setImportStatus({ type: 'error', message: 'Error reading file: ' + error.message }); setTimeout(() => setImportStatus({ type: null, message: '' }), 3000); }
     };
     reader.readAsText(file);
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleClear = () => {
-    clearAllData();
-    setImportStatus({ type: 'success', message: 'All data cleared successfully!' });
-    setTimeout(() => setImportStatus({ type: null, message: '' }), 3000);
+  const handleClear = () => { clearAllData(); setImportStatus({ type: 'success', message: 'All data cleared successfully!' }); setTimeout(() => setImportStatus({ type: null, message: '' }), 3000); };
+
+  const styles = {
+    container: { display: 'flex', flexDirection: 'column', gap: '24px' },
+    header: { marginBottom: '24px' },
+    title: { fontSize: '36px', fontWeight: '800', color: c.primary[900], marginBottom: '8px' },
+    subtitle: { fontSize: '16px', color: c.neutral[500] },
+    statusBox: (type) => ({ padding: '16px', borderRadius: '12px', border: `2px solid ${type === 'success' ? c.success[200] : c.error[200]}`, display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: type === 'success' ? c.success[50] : c.error[50], color: type === 'success' ? c.success[700] : c.error[700] }),
+    statusText: { fontWeight: '600' },
+    statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' },
+    statCard: { backgroundColor: c.neutral.white, borderRadius: '12px', padding: '20px', border: `2px solid ${c.neutral[200]}` },
+    statHeader: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' },
+    statLabel: { fontSize: '14px', fontWeight: '600', color: c.neutral[600] },
+    statValue: { fontSize: '24px', fontWeight: '700', color: c.primary[900] },
+    actionsGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' },
+    actionCard: { backgroundColor: c.neutral.white, borderRadius: '18px', padding: '24px', border: `1px solid ${c.neutral[200]}`, boxShadow: '0 1px 3px rgba(21,42,17,0.04)' },
+    actionHeader: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' },
+    actionIcon: (bgColor) => ({ width: '48px', height: '48px', background: bgColor, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }),
+    actionTitle: { fontWeight: '700', color: c.primary[900], fontSize: '18px' },
+    actionSubtitle: { fontSize: '14px', color: c.neutral[600] },
+    actionDesc: { fontSize: '14px', color: c.neutral[500], marginBottom: '16px', lineHeight: '1.5' },
+    actionBtn: (bgColor) => ({ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px 20px', background: bgColor, color: c.neutral.white, border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }),
+    dangerBtn: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px 20px', backgroundColor: c.error[500], color: c.neutral.white, border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', boxShadow: `0 4px 12px ${c.error[500]}30` },
+    fileInput: { display: 'none' },
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="mb-6">
-        <h1 className="text-4xl font-bold text-slate-900 mb-2">Data Management</h1>
-        <p className="text-slate-600">Backup, restore, or manage your ERP data</p>
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <h1 style={styles.title}>Data Management</h1>
+        <p style={styles.subtitle}>Backup, restore, or manage your ERP data</p>
       </div>
 
-      {/* Status Message */}
       {importStatus.type && (
-        <div
-          className={`p-4 rounded-xl border-2 flex items-center gap-3 ${
-            importStatus.type === 'success'
-              ? 'bg-green-50 border-green-200 text-green-700'
-              : 'bg-red-50 border-red-200 text-red-700'
-          }`}
-        >
-          {importStatus.type === 'success' ? (
-            <CheckCircle className="w-5 h-5" />
-          ) : (
-            <AlertCircle className="w-5 h-5" />
-          )}
-          <span className="font-semibold">{importStatus.message}</span>
+        <div style={styles.statusBox(importStatus.type)}>
+          {importStatus.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+          <span style={styles.statusText}>{importStatus.message}</span>
         </div>
       )}
 
-      {/* Data Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-xl p-5 border-2 border-slate-200">
-          <div className="flex items-center gap-3 mb-2">
-            <Database className="w-5 h-5 text-blue-500" />
-            <span className="text-sm font-semibold text-slate-600">Products</span>
-          </div>
-          <p className="text-2xl font-bold text-slate-900">{inventory.length}</p>
+      <div style={styles.statsGrid}>
+        <div style={styles.statCard}>
+          <div style={styles.statHeader}><Database size={20} color={c.primary[500]} /><span style={styles.statLabel}>Products</span></div>
+          <p style={styles.statValue}>{inventory.length}</p>
         </div>
-        <div className="bg-white rounded-xl p-5 border-2 border-slate-200">
-          <div className="flex items-center gap-3 mb-2">
-            <Database className="w-5 h-5 text-orange-500" />
-            <span className="text-sm font-semibold text-slate-600">Orders</span>
-          </div>
-          <p className="text-2xl font-bold text-slate-900">{orders.length}</p>
+        <div style={styles.statCard}>
+          <div style={styles.statHeader}><Database size={20} color={c.warning[500]} /><span style={styles.statLabel}>Orders</span></div>
+          <p style={styles.statValue}>{orders.length}</p>
         </div>
-        <div className="bg-white rounded-xl p-5 border-2 border-slate-200">
-          <div className="flex items-center gap-3 mb-2">
-            <Database className="w-5 h-5 text-green-500" />
-            <span className="text-sm font-semibold text-slate-600">Sales</span>
-          </div>
-          <p className="text-2xl font-bold text-slate-900">{sales.length}</p>
+        <div style={styles.statCard}>
+          <div style={styles.statHeader}><Database size={20} color={c.success[500]} /><span style={styles.statLabel}>Sales</span></div>
+          <p style={styles.statValue}>{sales.length}</p>
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Export */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-              <Download className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-lg">Export Data</h3>
-              <p className="text-sm text-slate-600">Download backup as JSON</p>
-            </div>
+      <div style={styles.actionsGrid}>
+        <div style={styles.actionCard}>
+          <div style={styles.actionHeader}>
+            <div style={styles.actionIcon(`linear-gradient(135deg, ${c.primary[500]} 0%, ${c.primary[600]} 100%)`)}><Download size={24} color={c.neutral.white} /></div>
+            <div><h3 style={styles.actionTitle}>Export Data</h3><p style={styles.actionSubtitle}>Download backup as JSON</p></div>
           </div>
-          <p className="text-sm text-slate-500 mb-4">
-            Export all your data (products, orders, sales) to a JSON file for backup purposes.
-          </p>
-          <button
-            onClick={handleExport}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all font-semibold shadow-md hover:shadow-lg"
-          >
-            <Download className="w-4 h-4" />
-            Export to JSON
-          </button>
+          <p style={styles.actionDesc}>Export all your data (products, orders, sales) to a JSON file for backup purposes.</p>
+          <button onClick={handleExport} style={styles.actionBtn(`linear-gradient(135deg, ${c.primary[500]} 0%, ${c.primary[600]} 100%)`)}><Download size={16} /> Export to JSON</button>
         </div>
 
-        {/* Import */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
-              <Upload className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-lg">Import Data</h3>
-              <p className="text-sm text-slate-600">Restore from JSON backup</p>
-            </div>
+        <div style={styles.actionCard}>
+          <div style={styles.actionHeader}>
+            <div style={styles.actionIcon(`linear-gradient(135deg, ${c.success[500]} 0%, ${c.success[600]} 100%)`)}><Upload size={24} color={c.neutral.white} /></div>
+            <div><h3 style={styles.actionTitle}>Import Data</h3><p style={styles.actionSubtitle}>Restore from JSON backup</p></div>
           </div>
-          <p className="text-sm text-slate-500 mb-4">
-            Import data from a previously exported JSON file. This will replace all current data.
-          </p>
-          <label className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all font-semibold shadow-md hover:shadow-lg cursor-pointer">
-            <Upload className="w-4 h-4" />
-            Import from JSON
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".json"
-              onChange={handleImport}
-              className="hidden"
-            />
-          </label>
+          <p style={styles.actionDesc}>Import data from a previously exported JSON file. This will replace all current data.</p>
+          <label style={styles.actionBtn(`linear-gradient(135deg, ${c.success[500]} 0%, ${c.success[600]} 100%)`)}><Upload size={16} /> Import from JSON<input ref={fileInputRef} type="file" accept=".json" onChange={handleImport} style={styles.fileInput} /></label>
         </div>
 
-        {/* Clear Data */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
-              <Trash2 className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-lg">Clear All Data</h3>
-              <p className="text-sm text-slate-600">Delete everything</p>
-            </div>
+        <div style={styles.actionCard}>
+          <div style={styles.actionHeader}>
+            <div style={styles.actionIcon(`linear-gradient(135deg, ${c.error[500]} 0%, ${c.error[600]} 100%)`)}><Trash2 size={24} color={c.neutral.white} /></div>
+            <div><h3 style={styles.actionTitle}>Clear Data</h3><p style={styles.actionSubtitle}>Reset all data</p></div>
           </div>
-          <p className="text-sm text-slate-500 mb-4">
-            <span className="font-semibold text-red-600">Warning:</span> This will permanently delete all products, orders, and sales data.
-          </p>
-          <button
-            onClick={handleClear}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all font-semibold shadow-md hover:shadow-lg"
-          >
-            <Trash2 className="w-4 h-4" />
-            Clear All Data
-          </button>
-        </div>
-      </div>
-
-      {/* Info Box */}
-      <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-5">
-        <div className="flex items-start gap-3">
-          <Database className="w-5 h-5 text-blue-600 mt-0.5" />
-          <div>
-            <h4 className="font-semibold text-blue-900 mb-2">About Data Storage</h4>
-            <p className="text-sm text-blue-700">
-              Your data is automatically saved to browser localStorage. This means your data persists between sessions,
-              but it's specific to this browser. For long-term backup, use the Export feature to download a JSON file.
-              You can restore this backup anytime using the Import feature.
-            </p>
-          </div>
+          <p style={styles.actionDesc}>Permanently delete all data from the system. This action cannot be undone.</p>
+          <button onClick={() => { if (window.confirm('Are you sure you want to clear all data? This action cannot be undone.')) handleClear(); }} style={styles.dangerBtn}><Trash2 size={16} /> Clear All Data</button>
         </div>
       </div>
     </div>

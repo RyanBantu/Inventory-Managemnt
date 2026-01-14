@@ -1,23 +1,39 @@
 // Helper functions for ID generation and calculations
 
+// EAN-13 compatible product ID generation
+// Uses 12-digit numeric IDs starting with 200 (internal use prefix)
+// Format: 200XXXXXXXXX where X is sequential number
 export const generateProductId = (inventory) => {
+  const prefix = '200'; // Internal use prefix for EAN-13
+  
   if (!inventory || inventory.length === 0) {
-    return 'PROD-001';
+    return `${prefix}000000001`; // 200000000001 (12 digits)
   }
   
+  // Extract numeric IDs, handling both old PROD-XXX and new numeric formats
   const ids = inventory
-    .map(item => item.id)
-    .filter(id => id.startsWith('PROD-'))
-    .map(id => parseInt(id.split('-')[1]))
-    .filter(num => !isNaN(num));
+    .map(item => {
+      if (typeof item.id === 'string') {
+        // Handle old PROD-XXX format
+        if (item.id.startsWith('PROD-')) {
+          return parseInt(item.id.split('-')[1]) || 0;
+        }
+        // Handle new numeric format (200XXXXXXXXX)
+        if (item.id.startsWith('200') && item.id.length === 12) {
+          return parseInt(item.id.substring(3)) || 0;
+        }
+        // Try parsing as pure number
+        return parseInt(item.id) || 0;
+      }
+      return 0;
+    })
+    .filter(num => !isNaN(num) && num > 0);
   
-  if (ids.length === 0) {
-    return 'PROD-001';
-  }
-  
-  const maxId = Math.max(...ids);
+  const maxId = ids.length > 0 ? Math.max(...ids) : 0;
   const nextId = maxId + 1;
-  return `PROD-${String(nextId).padStart(3, '0')}`;
+  
+  // Pad to 9 digits after prefix (total 12 digits for EAN-13)
+  return `${prefix}${String(nextId).padStart(9, '0')}`;
 };
 
 export const generateOrderId = (orders) => {

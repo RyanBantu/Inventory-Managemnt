@@ -18,6 +18,7 @@ export const AppProvider = ({ children }) => {
   const [sales, setSales] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [lastPrintStatus, setLastPrintStatus] = useState(null);
+  const [user, setUser] = useState(null); // { role: 'admin' | 'employee', username: string }
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -25,6 +26,7 @@ export const AppProvider = ({ children }) => {
       const savedInventory = localStorage.getItem('erp_inventory');
       const savedOrders = localStorage.getItem('erp_orders');
       const savedSales = localStorage.getItem('erp_sales');
+      const savedUser = localStorage.getItem('erp_user');
 
       if (savedInventory) {
         const parsed = JSON.parse(savedInventory);
@@ -43,6 +45,9 @@ export const AppProvider = ({ children }) => {
         if (Array.isArray(parsed)) {
           setSales(parsed);
         }
+      }
+      if (savedUser) {
+        setUser(JSON.parse(savedUser));
       }
       setIsLoaded(true);
     } catch (error) {
@@ -87,17 +92,19 @@ export const AppProvider = ({ children }) => {
     const newProduct = {
       ...product,
       id: generateProductId(inventory),
+      inventoryQuantity: product.quantity || 0, // Initialize inventoryQuantity
+      orderedQuantity: 0, // Initialize orderedQuantity
     };
     setInventory([...inventory, newProduct]);
     
-    // Automatically print barcode after product is added
+    // Automatically print barcode after product is added with quantity
     // This is non-blocking - product is added even if printing fails
-    printBarcode(newProduct.id, newProduct.name)
+    printBarcode(newProduct.id, newProduct.name, newProduct.quantity)
       .then(() => {
         setLastPrintStatus({
           success: true,
           productId: newProduct.id,
-          message: 'Barcode printed successfully',
+          message: `${newProduct.quantity} barcode(s) printed successfully`,
         });
         // Clear status after 5 seconds
         setTimeout(() => setLastPrintStatus(null), 5000);
@@ -144,6 +151,25 @@ export const AppProvider = ({ children }) => {
         ? { ...order, ...updatedData }
         : order
     ));
+    
+    // If order is marked as paid, update ordered quantities
+    if (updatedData.status === 'paid') {
+      const order = orders.find(o => o.id === orderId);
+      if (order) {
+        order.products.forEach(product => {
+          setInventory(prevInventory =>
+            prevInventory.map(item =>
+              item.id === product.productId
+                ? { 
+                    ...item, 
+                    orderedQuantity: (item.orderedQuantity || 0) + product.quantity 
+                  }
+                : item
+            )
+          );
+        });
+      }
+    }
   };
 
   const getOrderById = (orderId) => {
@@ -155,15 +181,40 @@ export const AppProvider = ({ children }) => {
     const order = getOrderById(orderId);
     if (!order) return;
 
-    // Update inventory
+    // Mark order as paid (don't move to sales yet - employee needs to fulfill it)
+    setOrders(orders.map(o => 
+      o.id === orderId 
+        ? { ...o, status: 'paid', billNumber, paidAt: new Date().toISOString() }
+        : o
+    ));
+    
+    return order;
+  };
+  
+  // Move order to sales after employee completes it
+  const fulfillOrder = (orderId) => {
+    const order = getOrderById(orderId);
+    if (!order) return;
+
+    // Update inventory - deduct quantities
     order.products.forEach(product => {
-      updateInventory(product.productId, product.quantity);
+      setInventory(prevInventory =>
+        prevInventory.map(item =>
+          item.id === product.productId
+            ? { 
+                ...item, 
+                inventoryQuantity: Math.max(0, (item.inventoryQuantity || item.quantity || 0) - product.quantity),
+                quantity: Math.max(0, (item.inventoryQuantity || item.quantity || 0) - product.quantity),
+                orderedQuantity: Math.max(0, (item.orderedQuantity || 0) - product.quantity)
+              }
+            : item
+        )
+      );
     });
 
     // Move to sales
     const sale = {
       ...order,
-      billNumber,
       status: 'completed',
       completedAt: new Date().toISOString(),
     };
@@ -258,16 +309,124 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // Find product by EAN-13 barcode code (matches the barcode printed on labels)
+  const findProductByBarcode = (barcodeValue) => {
+    if (!barcodeValue || barcodeValue.trim() === '') {
+      return null;
+    }
+
+    // Clean the scanned barcode (remove spaces, trim)
+    const cleanBarcode = barcodeValue.trim().replace(/\s/g, '');
+    
+    console.log('Searching for barcode:', cleanBarcode);
+
+    // Convert product ID to EAN-13 format (handles both old PROD-XXX and new numeric formats)
+    const convertToEAN13Format = (productId) => {
+      // If already 12-digit numeric, use as-is
+      if (/^\d{12}$/.test(productId)) {
+        return productId;
+      }
+      
+      // Handle old PROD-XXX format - extract digits and pad
+      const digits = productId.replace(/\D/g, '');
+      if (digits.length === 0) {
+        return '200000000000';
+      }
+      
+      // If starts with 200 prefix, it's already in our format
+      if (productId.startsWith('200') && digits.length >= 9) {
+        return digits.padStart(12, '0').substring(0, 12);
+      }
+      
+      // For old format, pad the extracted number
+      return digits.padStart(12, '0').substring(0, 12);
+    };
+
+    // Calculate EAN-13 check digit
+    const calculateCheckDigit = (code12) => {
+      let sum = 0;
+      for (let i = 0; i < 12; i++) {
+        const digit = parseInt(code12[i]);
+        sum += digit * (i % 2 === 0 ? 1 : 3);
+      }
+      const remainder = sum % 10;
+      return remainder === 0 ? '0' : String(10 - remainder);
+    };
+
+    // Strip check digit if 13-digit code was scanned (scanner reads all 13 digits)
+    let scannedCode12;
+    if (cleanBarcode.length === 13) {
+      scannedCode12 = cleanBarcode.substring(0, 12);
+    } else if (cleanBarcode.length === 12) {
+      scannedCode12 = cleanBarcode;
+    } else {
+      // Try to match as-is if length is different
+      scannedCode12 = cleanBarcode.padStart(12, '0').substring(0, 12);
+    }
+
+    console.log('Searching for 12-digit code:', scannedCode12);
+
+    // Find matching product by comparing EAN-13 codes
+    const foundProduct = inventory.find(product => {
+      const productEAN13 = convertToEAN13Format(product.id);
+      const match = productEAN13 === scannedCode12;
+      
+      console.log(`Comparing ${product.id}: ${productEAN13} === ${scannedCode12} ? ${match}`);
+      
+      return match;
+    });
+
+    if (foundProduct) {
+      console.log('Found product:', foundProduct);
+    } else {
+      console.log('No product found for barcode:', scannedCode12);
+    }
+
+    return foundProduct;
+  };
+
+  // Deduct quantity when product is scanned
+  const deductProductQuantity = (productId, quantity = 1) => {
+    setInventory(prevInventory =>
+      prevInventory.map(product => {
+        if (product.id === productId) {
+          const newInventoryQty = Math.max(0, (product.inventoryQuantity || product.quantity || 0) - quantity);
+          const newOrderedQty = Math.max(0, (product.orderedQuantity || 0) - quantity);
+          return { 
+            ...product, 
+            inventoryQuantity: newInventoryQty,
+            orderedQuantity: newOrderedQty,
+            quantity: newInventoryQty // Keep quantity synced for backward compatibility
+          };
+        }
+        return product;
+      })
+    );
+  };
+
+  // Authentication functions
+  const login = (userData) => {
+    setUser(userData);
+    localStorage.setItem('erp_user', JSON.stringify(userData));
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('erp_user');
+  };
+
   const value = {
     inventory,
     orders,
     sales,
+    user,
     addProduct,
     updateInventory,
     createOrder,
     updateOrder,
     getOrderById,
     completeOrder,
+    fulfillOrder,
     getSalesByDesigner,
     getStats,
     generateBillNumber: () => generateBillNumber(sales),
@@ -276,6 +435,10 @@ export const AppProvider = ({ children }) => {
     clearAllData,
     lastPrintStatus,
     clearPrintStatus: () => setLastPrintStatus(null),
+    findProductByBarcode,
+    deductProductQuantity,
+    login,
+    logout,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

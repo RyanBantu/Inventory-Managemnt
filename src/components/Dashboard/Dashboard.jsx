@@ -4,6 +4,9 @@ import { Package, ShoppingBag, DollarSign, Clock, Plus } from 'lucide-react';
 import StatsCard from './StatsCard';
 import ChartCard from './ChartCard';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { theme } from '../../theme';
+
+const c = theme.colors;
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -47,87 +50,91 @@ const Dashboard = () => {
     });
   }
 
+  const styles = {
+    container: {
+      minHeight: '100vh',
+      padding: '32px',
+      background: `linear-gradient(135deg, ${c.primary[50]} 0%, ${c.neutral[100]} 50%, ${c.primary[100]} 100%)`,
+    },
+    header: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: '40px',
+    },
+    headerLeft: {
+      flex: 1,
+    },
+    title: {
+      fontSize: '40px',
+      fontWeight: '800',
+      color: c.primary[900],
+      marginBottom: '8px',
+      letterSpacing: '-1px',
+    },
+    subtitle: {
+      fontSize: '16px',
+      color: c.primary[700],
+      fontWeight: '500',
+    },
+    addBtn: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      padding: '16px 28px',
+      borderRadius: '14px',
+      border: 'none',
+      background: `linear-gradient(135deg, ${c.primary[600]} 0%, ${c.primary[800]} 100%)`,
+      color: c.neutral.white,
+      fontSize: '16px',
+      fontWeight: '700',
+      cursor: 'pointer',
+      boxShadow: `0 6px 20px ${c.primary[600]}50`,
+      transition: 'all 0.3s ease',
+    },
+    statsGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(4, 1fr)',
+      gap: '28px',
+      marginBottom: '40px',
+    },
+    chartsGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, 1fr)',
+      gap: '28px',
+    },
+  };
+
   return (
-    <div className="flex flex-col gap-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-2">
-        <div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Dashboard</h1>
-          <p className="text-slate-600">Welcome back! Here's what's happening today.</p>
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <div style={styles.headerLeft}>
+          <h1 style={styles.title}>Dashboard</h1>
+          <p style={styles.subtitle}>Plan, prioritize, and accomplish your tasks with ease.</p>
         </div>
-        <button
-          onClick={() => navigate('/add-product')}
-          className="flex items-center gap-2 px-6 py-3.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105 font-semibold"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Add New Product</span>
+        <button onClick={() => navigate('/add-product')} style={styles.addBtn}>
+          <Plus size={20} />
+          <span>Add Product</span>
         </button>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatsCard
-          icon={Package}
-          title="Total Products"
-          value={stats.totalProducts}
-          subtitle="In inventory"
-          color="blue"
-        />
-        <StatsCard
-          icon={ShoppingBag}
-          title="Orders"
-          value={stats.weekOrders}
-          subtitle={`${stats.todayOrders} today`}
-          color="purple"
-        />
-        <StatsCard
-          icon={DollarSign}
-          title="Sales"
-          value={`$${stats.weekSales.toFixed(2)}`}
-          subtitle={`$${stats.todaySales.toFixed(2)} today`}
-          color="green"
-        />
-        <StatsCard
-          icon={Clock}
-          title="Pending Orders"
-          value={stats.pendingOrders}
-          subtitle="Awaiting processing"
-          color="amber"
-        />
+      <div style={styles.statsGrid}>
+        <StatsCard icon={Package} title="Total Products" value={stats.totalProducts} subtitle="In inventory" color="primary" />
+        <StatsCard icon={ShoppingBag} title="Orders" value={stats.weekOrders} subtitle={`${stats.todayOrders} today`} color="purple" />
+        <StatsCard icon={DollarSign} title="Sales" value={`$${stats.weekSales.toFixed(2)}`} subtitle={`$${stats.todaySales.toFixed(2)} today`} color="green" />
+        <StatsCard icon={Clock} title="Pending Orders" value={stats.pendingOrders} subtitle="Awaiting processing" color="amber" />
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div style={styles.chartsGrid}>
         <ChartCard title="Daily Sales (Last 7 Days)">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={last7Days}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis 
-                dataKey="date" 
-                stroke="#64748b"
-                tick={{ fill: '#64748b', fontSize: 12 }}
-              />
-              <YAxis 
-                stroke="#64748b"
-                tick={{ fill: '#64748b', fontSize: 12 }}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'white', 
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                }}
-              />
+              <CartesianGrid strokeDasharray="3 3" stroke={c.neutral[200]} />
+              <XAxis dataKey="date" stroke={c.neutral[500]} tick={{ fill: c.neutral[500], fontSize: 12 }} />
+              <YAxis stroke={c.neutral[500]} tick={{ fill: c.neutral[500], fontSize: 12 }} />
+              <Tooltip contentStyle={{ backgroundColor: c.neutral.white, border: `1px solid ${c.neutral[200]}`, borderRadius: '10px', boxShadow: '0 4px 12px rgba(21,42,17,0.1)' }} />
               <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="sales" 
-                stroke="#3b82f6" 
-                strokeWidth={3}
-                dot={{ fill: '#3b82f6', r: 5 }}
-                activeDot={{ r: 7 }}
-              />
+              <Line type="monotone" dataKey="sales" stroke={c.primary[600]} strokeWidth={3} dot={{ fill: c.primary[600], r: 5 }} activeDot={{ r: 7 }} />
             </LineChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -135,30 +142,12 @@ const Dashboard = () => {
         <ChartCard title="Weekly Sales (Last 4 Weeks)">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={last4Weeks}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis 
-                dataKey="week" 
-                stroke="#64748b"
-                tick={{ fill: '#64748b', fontSize: 12 }}
-              />
-              <YAxis 
-                stroke="#64748b"
-                tick={{ fill: '#64748b', fontSize: 12 }}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'white', 
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                }}
-              />
+              <CartesianGrid strokeDasharray="3 3" stroke={c.neutral[200]} />
+              <XAxis dataKey="week" stroke={c.neutral[500]} tick={{ fill: c.neutral[500], fontSize: 12 }} />
+              <YAxis stroke={c.neutral[500]} tick={{ fill: c.neutral[500], fontSize: 12 }} />
+              <Tooltip contentStyle={{ backgroundColor: c.neutral.white, border: `1px solid ${c.neutral[200]}`, borderRadius: '10px', boxShadow: '0 4px 12px rgba(21,42,17,0.1)' }} />
               <Legend />
-              <Bar 
-                dataKey="sales" 
-                fill="#60a5fa" 
-                radius={[12, 12, 0, 0]}
-              />
+              <Bar dataKey="sales" fill={c.primary[500]} radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
