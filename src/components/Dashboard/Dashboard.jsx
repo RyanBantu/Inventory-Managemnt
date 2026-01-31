@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { Package, ShoppingBag, DollarSign, Clock, Plus } from 'lucide-react';
 import StatsCard from './StatsCard';
 import ChartCard from './ChartCard';
+import EventCalendar from './EventCalendar';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { theme } from '../../theme';
 
@@ -152,6 +153,8 @@ const Dashboard = () => {
           </ResponsiveContainer>
         </ChartCard>
       </div>
+
+      <EventCalendar />
     </div>
   );
 };
